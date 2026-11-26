@@ -36,6 +36,13 @@ body { background: radial-gradient(120% 80% at 50% 0%, #1b1440 0%, #07070f 60%);
 .b.on { border-color: transparent; }
 .b.big { width: 50%; height: 50%; font-size: 22px; letter-spacing: .04em; box-shadow: 0 0 24px currentColor inset; }
 #bX.big { left: -8%; top: 25%; }
+/* quiz show: four big answer buttons, same colours as on the TV */
+#qz4 { display: none; position: absolute; left: max(14px, env(safe-area-inset-left)); right: max(14px, env(safe-area-inset-right)); top: 64px; bottom: max(16px, env(safe-area-inset-bottom)); }
+#pad.quiz #dpad, #pad.quiz #btns, #pad.quiz #mid, #pad.quiz .sm[data-a="LB"] { display: none; } #pad.quiz #qz4 { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 14px; }
+#qz4 .q { border-radius: 26px; display: flex; align-items: center; justify-content: center; font-size: 76px; font-weight: 900; line-height: 1; color: #06121a; box-shadow: inset 0 -10px 0 rgba(0,0,0,.22); }
+#qz4 .q.on { transform: scale(.95); box-shadow: inset 0 0 0 6px #fff, 0 0 40px currentColor; filter: brightness(1.2); }
+#qA { background: #25d98f; } #qB { background: #ff3d6e; } #qC { background: #3d8bff; } #qD { background: #ffb52e; }
+@media (orientation: portrait) { #pad.quiz #qz4 { grid-template-columns: 1fr; grid-template-rows: repeat(4, 1fr); } }
 #mid { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); display: flex; flex-direction: column; gap: 10px; align-items: center; }
 #me { font-size: 13px; color: var(--dim); text-align: center; }
 #me b { display: block; font-size: 20px; color: var(--pc); }
@@ -58,6 +65,7 @@ body { background: radial-gradient(120% 80% at 50% 0%, #1b1440 0%, #07070f 60%);
   <div id="bar"><span class="st" id="st"><i></i>Connecting…</span><span class="sm" data-a="LB">HOLD</span><span class="sm" data-a="START">PAUSE</span><span class="sm" data-a="BACK">BACK</span></div>
   <div id="mid"><div id="me"></div></div>
   <div id="dpad"><div class="d" id="dU" data-a="U">▲</div><div class="d" id="dL" data-a="L">◀</div><div class="d" id="dR" data-a="R">▶</div><div class="d" id="dD" data-a="D">▼</div></div>
+  <div id="qz4"><div class="q" id="qA" data-a="A">A</div><div class="q" id="qB" data-a="B">B</div><div class="q" id="qC" data-a="X">C</div><div class="q" id="qD" data-a="Y">D</div></div>
   <div id="btns"><div class="b" id="bY" data-a="Y">Y<small>POWER</small></div><div class="b" id="bX" data-a="X">X</div><div class="b" id="bB" data-a="B">B</div><div class="b" id="bA" data-a="A">A<small>OK</small></div></div>
 </div>
 <script>
@@ -104,6 +112,7 @@ body { background: radial-gradient(120% 80% at 50% 0%, #1b1440 0%, #07070f 60%);
   // the game on the TV names the buttons; a DROP button grows big so it is easy to hit on purpose
   function labels(l) {
     var key = JSON.stringify(l); if (key === lastLay) return; lastLay = key;
+    $('pad').classList.toggle('quiz', l.mode === 'quiz');
     ['A', 'B', 'X', 'Y'].forEach(function (k) {
       var el = $('b' + k), t = l[k]; if (!el) return;
       el.innerHTML = t ? (t === 'DROP' ? 'DROP' : k + '<small>' + t.replace(/</g, '') + '</small>') : BASE[k];
