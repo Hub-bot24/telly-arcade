@@ -34,6 +34,8 @@ body { background: radial-gradient(120% 80% at 50% 0%, #1b1440 0%, #07070f 60%);
 #bA { left: 31%; bottom: 0; color: #57f0a0; border-color: #57f0a0; } #bB { right: 0; top: 31%; color: #ff5c8a; border-color: #ff5c8a; }
 #bX { left: 0; top: 31%; color: #5ec8ff; border-color: #5ec8ff; } #bY { left: 31%; top: 0; color: #ffc94a; border-color: #ffc94a; }
 .b.on { border-color: transparent; }
+.b.big { width: 50%; height: 50%; font-size: 22px; letter-spacing: .04em; box-shadow: 0 0 24px currentColor inset; }
+#bX.big { left: -8%; top: 25%; }
 #mid { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); display: flex; flex-direction: column; gap: 10px; align-items: center; }
 #me { font-size: 13px; color: var(--dim); text-align: center; }
 #me b { display: block; font-size: 20px; color: var(--pc); }
@@ -85,7 +87,7 @@ body { background: radial-gradient(120% 80% at 50% 0%, #1b1440 0%, #07070f 60%);
       if ((first & 0xF0) === 0x20) { live = true; retry = 0; send(pkt(0x82, [0, 1].concat(str('tellyarc/' + room + '/t')).concat([0]))); pub({ a: 'HI' }); status(); }
       else if ((first & 0xF0) === 0x30) {
         var tl = (body[0] << 8) | body[1], off = 2 + tl + (((first >> 1) & 3) ? 2 : 0);
-        try { var m = JSON.parse(new TextDecoder().decode(new Uint8Array(body.slice(off)))); if (m.to === id) { if (m.wait) waitTV = Date.now(); else heard = Date.now(); status(); } } catch (e) { }
+        try { var m = JSON.parse(new TextDecoder().decode(new Uint8Array(body.slice(off)))); if (m.to === id) { if (m.wait) waitTV = Date.now(); else heard = Date.now(); if (m.lay) labels(m.lay); status(); } } catch (e) { }
       }
     }
   }
@@ -98,7 +100,17 @@ body { background: radial-gradient(120% 80% at 50% 0%, #1b1440 0%, #07070f 60%);
   }
   function later() { retry = Math.min(retry + 1, 5); setTimeout(connect, 600 * retry); }
   setInterval(function () { if (live) { send(new Uint8Array([0xC0, 0])); pub({ a: 'HI' }); } status(); }, 5000);
-  var waitTV = 0;
+  var waitTV = 0, BASE = { A: 'A<small>OK</small>', B: 'B', X: 'X', Y: 'Y<small>POWER</small>' }, lastLay = '';
+  // the game on the TV names the buttons; a DROP button grows big so it is easy to hit on purpose
+  function labels(l) {
+    var key = JSON.stringify(l); if (key === lastLay) return; lastLay = key;
+    ['A', 'B', 'X', 'Y'].forEach(function (k) {
+      var el = $('b' + k), t = l[k]; if (!el) return;
+      el.innerHTML = t ? (t === 'DROP' ? 'DROP' : k + '<small>' + t.replace(/</g, '') + '</small>') : BASE[k];
+      el.classList.toggle('big', t === 'DROP');
+    });
+    var h = document.querySelector('.sm[data-a="LB"]'); if (h) h.textContent = l.LB || 'HOLD';
+  }
   function status() {
     var tv = live && Date.now() - heard < 12000, wt = live && !tv && Date.now() - waitTV < 12000, el = $('st');
     el.className = 'st' + (tv ? ' ok' : ''); el.innerHTML = '<i></i>' + (tv ? 'Connected to the TV · room ' + room : wt ? 'Ask someone at the TV to press OK to let you in' : live ? 'Waiting for the TV (open the arcade) · ' + room : 'Connecting…');
