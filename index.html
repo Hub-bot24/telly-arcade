@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#07070f">
+<title>Telly Controller</title>
+<style>
+:root { --bg: #07070f; --fg: #eef2f7; --dim: rgba(238,242,247,.55); --line: rgba(255,255,255,.12); --pc: #7af7ff; }
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); font: 16px/1.3 -apple-system, system-ui, "Segoe UI", Roboto, sans-serif; overflow: hidden; touch-action: none; }
+body { background: radial-gradient(120% 80% at 50% 0%, #1b1440 0%, #07070f 60%); }
+#join { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; gap: 14px; text-align: center; }
+#join h1 { margin: 0 0 6px; font-size: 30px; letter-spacing: -.02em; }
+#join p { margin: 0; color: var(--dim); max-width: 320px; }
+#join input { width: 260px; max-width: 100%; font: 600 22px/1 inherit; text-align: center; padding: 14px; border-radius: 14px; border: 1px solid var(--line); background: rgba(255,255,255,.06); color: var(--fg); text-transform: uppercase; letter-spacing: .2em; }
+#join input#name { text-transform: none; letter-spacing: 0; }
+#join button { font: 700 18px/1 inherit; padding: 16px 36px; border-radius: 999px; border: 0; background: var(--pc); color: #04121a; }
+#pad { position: fixed; inset: 0; display: none; }
+#bar { position: absolute; left: 0; right: 0; top: 0; padding: max(10px, env(safe-area-inset-top)) 16px 0; display: flex; align-items: center; gap: 10px; }
+#bar .st { flex: 1; font-size: 13px; color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#bar .st i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #f5b84a; margin-right: 6px; }
+#bar .st.ok i { background: #57f0a0; }
+.sm { font: 700 13px/1 inherit; letter-spacing: .08em; color: var(--fg); background: rgba(255,255,255,.08); border: 1px solid var(--line); border-radius: 999px; padding: 10px 14px; }
+.sm.on, .b.on { background: var(--pc); color: #04121a; transform: scale(.94); }
+#dpad { position: absolute; left: max(18px, env(safe-area-inset-left)); bottom: max(22px, env(safe-area-inset-bottom)); width: 46vmin; height: 46vmin; max-width: 260px; max-height: 260px; }
+#dpad .d { position: absolute; width: 36%; height: 36%; border-radius: 18px; background: rgba(255,255,255,.08); border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; font-size: 26px; color: var(--dim); }
+#dpad .d.on { background: var(--pc); color: #04121a; }
+#dU { left: 32%; top: 0; } #dD { left: 32%; bottom: 0; } #dL { left: 0; top: 32%; } #dR { right: 0; top: 32%; }
+#btns { position: absolute; right: max(18px, env(safe-area-inset-right)); bottom: max(22px, env(safe-area-inset-bottom)); width: 46vmin; height: 46vmin; max-width: 260px; max-height: 260px; }
+.b { position: absolute; width: 38%; height: 38%; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; font: 800 26px/1 inherit; border: 2px solid; background: rgba(255,255,255,.04); }
+.b small { font: 600 10px/1.1 inherit; letter-spacing: .06em; opacity: .7; margin-top: 3px; }
+#bA { left: 31%; bottom: 0; color: #57f0a0; border-color: #57f0a0; } #bB { right: 0; top: 31%; color: #ff5c8a; border-color: #ff5c8a; }
+#bX { left: 0; top: 31%; color: #5ec8ff; border-color: #5ec8ff; } #bY { left: 31%; top: 0; color: #ffc94a; border-color: #ffc94a; }
+.b.on { border-color: transparent; }
+#mid { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); display: flex; flex-direction: column; gap: 10px; align-items: center; }
+#me { font-size: 13px; color: var(--dim); text-align: center; }
+#me b { display: block; font-size: 20px; color: var(--pc); }
+@media (orientation: portrait) {
+  #dpad { bottom: auto; top: 34%; left: 50%; transform: translateX(-50%); width: 62vw; height: 62vw; }
+  #btns { width: 62vw; height: 62vw; right: 50%; transform: translateX(50%); }
+  #mid { top: 20%; }
+}
+</style>
+</head>
+<body>
+<div id="join">
+  <h1>Telly Controller</h1>
+  <p>Turns this phone into a game controller for the TV arcade. The room code is on the arcade screen.</p>
+  <input id="room" maxlength="4" placeholder="ROOM" autocomplete="off" autocapitalize="characters">
+  <input id="name" maxlength="12" placeholder="Your name" autocomplete="off">
+  <button id="go">Connect</button>
+</div>
+<div id="pad">
+  <div id="bar"><span class="st" id="st"><i></i>Connecting…</span><span class="sm" data-a="LB">HOLD</span><span class="sm" data-a="START">PAUSE</span><span class="sm" data-a="BACK">BACK</span></div>
+  <div id="mid"><div id="me"></div></div>
+  <div id="dpad"><div class="d" id="dU" data-a="U">▲</div><div class="d" id="dL" data-a="L">◀</div><div class="d" id="dR" data-a="R">▶</div><div class="d" id="dD" data-a="D">▼</div></div>
+  <div id="btns"><div class="b" id="bY" data-a="Y">Y<small>POWER</small></div><div class="b" id="bX" data-a="X">X</div><div class="b" id="bB" data-a="B">B</div><div class="b" id="bA" data-a="A">A<small>OK</small></div></div>
+</div>
+<script>
+(function () {
+  var bq = /[?&]b=([^&]+)/.exec(location.search), BROKER = bq ? decodeURIComponent(bq[1]) : 'wss://broker.hivemq.com:8884/mqtt';
+  var $ = function (id) { return document.getElementById(id); };
+  function get(k) { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } }
+  function put(k, v) { try { localStorage.setItem(k, v); } catch (e) { } }
+  var id = get('tc.id') || ('p' + Math.random().toString(36).slice(2, 10)); put('tc.id', id);
+  var q = /[?&]r=([A-Za-z0-9]{4})/.exec(location.search), room = (q ? q[1] : get('tc.room')).toUpperCase(), name = get('tc.name');
+  $('room').value = room; $('name').value = name;
+  var ws = null, live = false, heard = 0, retry = 0;
+  // tiny MQTT 3.1.1 client, QoS 0
+  function utf8(s) { return Array.prototype.slice.call(new TextEncoder().encode(s)); }
+  function str(s) { var b = utf8(s); return [b.length >> 8, b.length & 255].concat(b); }
+  function len(n) { var o = []; do { var d = n % 128; n = Math.floor(n / 128); if (n > 0) d |= 128; o.push(d); } while (n > 0); return o; }
+  function pkt(t, body) { return new Uint8Array([t].concat(len(body.length)).concat(body)); }
+  function send(u) { if (ws && ws.readyState === 1) ws.send(u); }
+  function pub(obj) { obj.id = id; obj.n = name; send(pkt(0x30, str('tellyarc/' + room + '/c').concat(utf8(JSON.stringify(obj))))); }
+  var buf = [];
+  function onData(ab) {
+    var b = new Uint8Array(ab); for (var i = 0; i < b.length; i++) buf.push(b[i]);
+    while (buf.length >= 2) {
+      var mul = 1, n = 0, k = 1, by; do { if (k >= buf.length) return; by = buf[k++]; n += (by & 127) * mul; mul *= 128; } while (by & 128);
+      if (buf.length < k + n) return;
+      var first = buf[0], body = buf.slice(k, k + n); buf = buf.slice(k + n);
+      if ((first & 0xF0) === 0x20) { live = true; retry = 0; send(pkt(0x82, [0, 1].concat(str('tellyarc/' + room + '/t')).concat([0]))); pub({ a: 'HI' }); status(); }
+      else if ((first & 0xF0) === 0x30) {
+        var tl = (body[0] << 8) | body[1], off = 2 + tl + (((first >> 1) & 3) ? 2 : 0);
+        try { var m = JSON.parse(new TextDecoder().decode(new Uint8Array(body.slice(off)))); if (m.to === id) { if (m.wait) waitTV = Date.now(); else heard = Date.now(); status(); } } catch (e) { }
+      }
+    }
+  }
+  function connect() {
+    try { ws = new WebSocket(BROKER, ['mqtt']); } catch (e) { return later(); }
+    ws.binaryType = 'arraybuffer'; buf = [];
+    ws.onopen = function () { send(pkt(0x10, str('MQTT').concat([4, 2, 0, 60]).concat(str('ph-' + id + '-' + Math.floor(Math.random() * 1e5))))); };
+    ws.onmessage = function (e) { onData(e.data); };
+    ws.onclose = function () { ws = null; live = false; status(); later(); };
+  }
+  function later() { retry = Math.min(retry + 1, 5); setTimeout(connect, 600 * retry); }
+  setInterval(function () { if (live) { send(new Uint8Array([0xC0, 0])); pub({ a: 'HI' }); } status(); }, 5000);
+  var waitTV = 0;
+  function status() {
+    var tv = live && Date.now() - heard < 12000, wt = live && !tv && Date.now() - waitTV < 12000, el = $('st');
+    el.className = 'st' + (tv ? ' ok' : ''); el.innerHTML = '<i></i>' + (tv ? 'Connected to the TV · room ' + room : wt ? 'Ask someone at the TV to press OK to let you in' : live ? 'Waiting for the TV (open the arcade) · ' + room : 'Connecting…');
+    $('me').innerHTML = '<b>' + (name || 'Player').replace(/</g, '') + '</b>Press A to join a game';
+  }
+  // buttons: multi-touch, each finger tracked separately
+  var held = {}, owner = {};
+  function press(a, on) {
+    if (!!held[a] === on) return; held[a] = on;
+    var els = document.querySelectorAll('[data-a="' + a + '"]'); for (var i = 0; i < els.length; i++) els[i].classList.toggle('on', on);
+    if (on && navigator.vibrate) navigator.vibrate(8);
+    pub({ a: a, d: on ? 1 : 0 });
+  }
+  function hit(x, y) { var el = document.elementFromPoint(x, y); while (el && el !== document.body && !el.getAttribute('data-a')) el = el.parentNode; return el && el.getAttribute ? el.getAttribute('data-a') : null; }
+  function move(e) {
+    e.preventDefault();
+    for (var i = 0; i < e.changedTouches.length; i++) {
+      var t = e.changedTouches[i], a = e.type === 'touchend' || e.type === 'touchcancel' ? null : hit(t.clientX, t.clientY), was = owner[t.identifier];
+      if (was && was !== a) { var still = false; for (var k in owner) if (k != t.identifier && owner[k] === was) still = true; if (!still) press(was, false); }
+      if (a) { owner[t.identifier] = a; press(a, true); } else delete owner[t.identifier];
+    }
+  }
+  var pad = $('pad');
+  ['touchstart', 'touchmove', 'touchend', 'touchcancel'].forEach(function (n) { pad.addEventListener(n, move, { passive: false }); });
+  // mouse fallback (desktop testing)
+  pad.addEventListener('mousedown', function (e) { var a = hit(e.clientX, e.clientY); if (a) { press(a, true); var up = function () { press(a, false); removeEventListener('mouseup', up); }; addEventListener('mouseup', up); } });
+  function start() {
+    room = $('room').value.toUpperCase().replace(/[^A-Z0-9]/g, ''); name = $('name').value.trim().slice(0, 12);
+    if (room.length !== 4) { $('room').focus(); return; }
+    put('tc.room', room); put('tc.name', name);
+    $('join').style.display = 'none'; pad.style.display = 'block';
+    try { if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(function () { }); } catch (e) { }
+    status(); connect();
+  }
+  $('go').onclick = start;
+  if (room && name) { $('go').textContent = 'Connect as ' + name; }
+  window.addEventListener('pagehide', function () { pub({ a: 'BYE' }); });
+})();
+</script>
+</body>
+</html>

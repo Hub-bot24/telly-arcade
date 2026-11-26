@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#04050a">
+<title>Telly Arcade</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..700&family=Manrope:wght@300;400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="games/arcade.css">
+<link rel="stylesheet" href="games/quiz.css">
+<style>
+* { -webkit-tap-highlight-color: transparent; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+html, body { margin: 0; height: 100%; background: #04050a; overflow: hidden; touch-action: none; }
+#stage { position: absolute; left: 50%; top: 50%; width: 1920px; height: 1080px; margin: -540px 0 0 -960px; transform-origin: 50% 50%; overflow: hidden; background: #04050a; }
+#arcade #ar-phone { display: none; }
+#tc { position: fixed; inset: 0; pointer-events: none; z-index: 10; }
+#tc .z { position: absolute; pointer-events: auto; }
+.k { position: absolute; display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,.75); font: 700 20px/1 Manrope, system-ui, sans-serif; border-radius: 16px; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.14); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
+.k.on { background: rgba(122,247,255,.85); color: #04121a; }
+#dp { left: max(10px, env(safe-area-inset-left)); bottom: max(10px, env(safe-area-inset-bottom)); width: 34vmin; height: 34vmin; }
+#dp .k { width: 36%; height: 36%; }
+#kU { left: 32%; top: 0; } #kD { left: 32%; bottom: 0; } #kL { left: 0; top: 32%; } #kR { right: 0; top: 32%; }
+#ab { right: max(10px, env(safe-area-inset-right)); bottom: max(10px, env(safe-area-inset-bottom)); width: 34vmin; height: 34vmin; }
+#ab .k { width: 40%; height: 40%; border-radius: 50%; font-size: 22px; }
+#kA { right: 0; bottom: 0; color: #57f0a0; border-color: #57f0a0; } #kB { right: 0; top: 0; color: #ff5c8a; border-color: #ff5c8a; width: 30% !important; height: 30% !important; }
+#kY { left: 0; top: 30%; color: #ffc94a; border-color: #ffc94a; } #kH { left: 4%; bottom: 0; width: 34% !important; height: 26% !important; border-radius: 14px !important; font-size: 13px !important; }
+#top { right: max(10px, env(safe-area-inset-right)); top: max(8px, env(safe-area-inset-top)); display: flex; gap: 8px; }
+#top .k { position: static; padding: 9px 13px; font-size: 12px; letter-spacing: .08em; border-radius: 999px; }
+#turn { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; flex-direction: column; gap: 14px; background: #04050a; color: #eef2f7; font: 600 20px/1.3 Manrope, system-ui, sans-serif; z-index: 20; text-align: center; padding: 30px; }
+#turn b { font: 700 34px/1.1 'Bricolage Grotesque', system-ui, sans-serif; }
+@media (orientation: portrait) { #turn { display: flex; } }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<div id="tc">
+  <div class="z" id="top"><span class="k" data-a="START">PAUSE</span><span class="k" data-a="BACK">BACK</span></div>
+  <div class="z" id="dp"><span class="k" id="kU" data-a="U">▲</span><span class="k" id="kL" data-a="L">◀</span><span class="k" id="kR" data-a="R">▶</span><span class="k" id="kD" data-a="D">▼</span></div>
+  <div class="z" id="ab"><span class="k" id="kY" data-a="Y">Y</span><span class="k" id="kB" data-a="B">B</span><span class="k" id="kA" data-a="A">A</span><span class="k" id="kH" data-a="LB">HOLD</span></div>
+</div>
+<div id="turn"><b>Turn your phone sideways</b>The arcade plays in landscape.</div>
+<script>window.DASH_SETTINGS = { games: { noPhoto: true } };</script>
+<script src="games/arcade.js"></script>
+<script src="games/shardfall.js"></script>
+<script src="games/tidewar.js"></script>
+<script src="games/bounce.js"></script>
+<script src="games/quiz-questions.js"></script>
+<script src="games/quiz.js"></script>
+<script>
+(function () {
+  var st = document.getElementById('stage');
+  function fit() { var s = Math.min(innerWidth / 1920, innerHeight / 1080); st.style.transform = 'scale(' + s + ')'; }
+  fit(); addEventListener('resize', fit);
+  // the touch buttons act like one more controller, called "touch"
+  var held = ARCADE.phoneHeld.touch = {}, owner = {};
+  var downAt = {};
+  function press(a, on) {
+    if (on) downAt[a] = Date.now();
+    else { var age = Date.now() - (downAt[a] || 0); if (age < 90) { setTimeout(function () { if (!owns(a)) press(a, false); }, 90 - age); return; } }
+    if (!!held[a] === on) return; if (on) held[a] = true; else delete held[a];
+    var els = document.querySelectorAll('[data-a="' + a + '"]'); for (var i = 0; i < els.length; i++) els[i].classList.toggle('on', on);
+    if (on && navigator.vibrate) navigator.vibrate(6);
+  }
+  function owns(a) { for (var k in owner) if (owner[k] === a) return true; return false; }
+  function hit(x, y) { var el = document.elementFromPoint(x, y); while (el && el !== document.body && !(el.getAttribute && el.getAttribute('data-a'))) el = el.parentNode; return el && el.getAttribute ? el.getAttribute('data-a') : null; }
+  function touch(e) {
+    var a0 = ARCADE.audio && ARCADE.audio(); try { if (a0 && a0.state === 'suspended') a0.resume(); } catch (er) { }
+    for (var i = 0; i < e.changedTouches.length; i++) {
+      var t = e.changedTouches[i], a = (e.type === 'touchend' || e.type === 'touchcancel') ? null : hit(t.clientX, t.clientY), was = owner[t.identifier];
+      if (was && was !== a) { var still = false; for (var k in owner) if (k != t.identifier && owner[k] === was) still = true; if (!still) press(was, false); }
+      if (a) { owner[t.identifier] = a; press(a, true); } else delete owner[t.identifier];
+    }
+    if (e.target.closest && e.target.closest('#tc .z')) e.preventDefault();
+  }
+  ['touchstart', 'touchmove', 'touchend', 'touchcancel'].forEach(function (n) { document.addEventListener(n, touch, { passive: false }); });
+  document.addEventListener('mousedown', function (e) { var a = hit(e.clientX, e.clientY); if (a) { press(a, true); var up = function () { press(a, false); removeEventListener('mouseup', up); }; addEventListener('mouseup', up); } });
+  // there's no dashboard behind it here, so the arcade simply stays open
+  var close0 = ARCADE.close; ARCADE.close = function () { close0(); setTimeout(ARCADE.open, 50); };
+  ARCADE.srcLabel = (function (f) { return function (s) { return s === 'touch' ? 'This phone' : f(s); }; })(ARCADE.srcLabel);
+  setTimeout(ARCADE.open, 200);
+})();
+</script>
+</body>
+</html>

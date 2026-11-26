@@ -1,0 +1,146 @@
+/* ===== Arcade overlay (Shardfall + Tidewar). Self-contained: everything is under #arcade. ===== */
+#arcade { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; z-index: 50; display: none; overflow: hidden;
+  background: #04050a; color: #eef2f7; font-family: Manrope, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+#arcade.open { display: block; }
+body.arcade-on #scenes, body.arcade-on #sky, body.arcade-on #corner, body.arcade-on #menu { visibility: hidden; }
+#arcade * { box-sizing: border-box; }
+#ar-bg { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
+#ar-cv { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
+#ar-ui { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
+.ar-scr { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; opacity: 0; visibility: hidden;
+  -webkit-transition: opacity .45s ease, visibility 0s linear .45s; transition: opacity .45s ease, visibility 0s linear .45s; }
+.ar-scr.on { opacity: 1; visibility: visible; -webkit-transition: opacity .45s ease; transition: opacity .45s ease; }
+.ar-h { font-family: 'Bricolage Grotesque', Manrope, sans-serif; letter-spacing: -.02em; }
+.ar-eyebrow { font-size: 22px; letter-spacing: .42em; text-transform: uppercase; color: rgba(220,230,255,.55); font-weight: 600; }
+.ar-hints { position: absolute; left: 0; right: 0; bottom: 46px; text-align: center; font-size: 22px; color: rgba(220,230,255,.5); letter-spacing: .04em; }
+.ar-hints b { color: #fff; font-weight: 600; padding: 3px 12px; border: 1px solid rgba(255,255,255,.25); border-radius: 8px; margin: 0 6px 0 22px; font-size: 19px; }
+
+/* ---------- home ---------- */
+#ar-home .ar-top { position: absolute; left: 0; right: 0; top: 92px; text-align: center; }
+#ar-home .ar-title { font-size: 88px; font-weight: 300; margin-top: 10px; }
+#ar-home .ar-title i { font-style: normal; font-weight: 700; background: -webkit-linear-gradient(0deg, #7af7ff, #b48cff 55%, #ff7ad9); -webkit-background-clip: text; color: transparent; }
+.ar-cards { position: absolute; left: 0; top: 330px; display: -webkit-box; display: -webkit-flex; display: flex; -webkit-transition: -webkit-transform .45s cubic-bezier(.2,.8,.2,1); transition: transform .45s cubic-bezier(.2,.8,.2,1); }
+#ar-home { -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 70px, #000 1850px, transparent 1920px); mask-image: linear-gradient(90deg, transparent 0, #000 70px, #000 1850px, transparent 1920px); }
+.ar-card { -webkit-flex-shrink: 0; flex-shrink: 0; }
+.ar-card { position: relative; width: 520px; height: 560px; margin: 0 18px; border-radius: 34px; overflow: hidden;
+  background: rgba(255,255,255,.035); border: 1px solid rgba(255,255,255,.09);
+  -webkit-transition: -webkit-transform .35s cubic-bezier(.2,.8,.2,1), border-color .3s, box-shadow .35s; transition: transform .35s cubic-bezier(.2,.8,.2,1), border-color .3s, box-shadow .35s; }
+.ar-card canvas { position: absolute; left: 0; top: 0; width: 520px; height: 560px; }
+.ar-card .ar-cap { position: absolute; left: 40px; right: 40px; bottom: 36px; }
+.ar-card .ar-name { font-size: 58px; font-weight: 700; line-height: 1; }
+.ar-card .ar-desc { font-size: 23px; color: rgba(230,236,255,.66); margin-top: 14px; line-height: 1.35; }
+.ar-card .ar-tag { display: inline-block; margin-top: 18px; font-size: 18px; letter-spacing: .2em; text-transform: uppercase; color: rgba(255,255,255,.8); padding: 7px 14px; border-radius: 999px; background: rgba(255,255,255,.08); }
+.ar-card.sel { -webkit-transform: translateY(-14px) scale(1.04); transform: translateY(-14px) scale(1.04); border-color: rgba(255,255,255,.55); box-shadow: 0 30px 80px rgba(0,0,0,.6), 0 0 0 2px rgba(255,255,255,.12), 0 0 90px var(--glow, rgba(122,247,255,.25)); }
+.ar-card.sm { width: 400px; }
+.ar-card.sm canvas { width: 400px; }
+
+/* ---------- lobbies ---------- */
+.ar-lob-top { position: absolute; left: 0; right: 0; top: 80px; text-align: center; }
+.ar-lob-top .ar-title { font-size: 74px; font-weight: 700; margin-top: 8px; }
+.ar-seats { position: absolute; left: 0; right: 0; top: 300px; display: -webkit-box; display: -webkit-flex; display: flex; -webkit-box-pack: center; -webkit-justify-content: center; justify-content: center; }
+.ar-seat { width: 390px; height: 520px; margin: 0 16px; border-radius: 30px; border: 2px dashed rgba(255,255,255,.14); position: relative; text-align: center;
+  background: rgba(255,255,255,.02); -webkit-transition: all .3s; transition: all .3s; }
+.ar-seat .ar-sn { position: absolute; top: 30px; left: 0; right: 0; font-size: 20px; letter-spacing: .34em; color: rgba(255,255,255,.4); font-weight: 600; }
+.ar-seat .ar-join { position: absolute; top: 210px; left: 20px; right: 20px; font-size: 26px; color: rgba(255,255,255,.42); line-height: 1.5; }
+.ar-seat .ar-av { width: 150px; height: 150px; border-radius: 44px; margin: 92px auto 0; position: relative; display: none;
+  -webkit-transform: rotate(45deg); transform: rotate(45deg); }
+.ar-seat .ar-av span { position: absolute; left: 0; right: 0; top: 50%; margin-top: -40px; font: 700 70px/80px 'Bricolage Grotesque', sans-serif; color: #050608; -webkit-transform: rotate(-45deg); transform: rotate(-45deg); }
+.ar-seat .ar-pn { font: 700 46px/1.1 'Bricolage Grotesque', sans-serif; margin-top: 46px; display: none; }
+.ar-seat .ar-pn em { font-style: normal; color: rgba(255,255,255,.35); font-weight: 300; padding: 0 14px; }
+.ar-seat .ar-ps { font-size: 22px; color: rgba(255,255,255,.55); margin-top: 12px; display: none; }
+.ar-seat .ar-ctl { position: absolute; bottom: 92px; left: 0; right: 0; font-size: 19px; color: rgba(255,255,255,.4); letter-spacing: .1em; display: none; }
+.ar-seat .ar-rd { position: absolute; bottom: 30px; left: 40px; right: 40px; height: 50px; line-height: 50px; border-radius: 999px; font-size: 21px; font-weight: 700; letter-spacing: .25em;
+  background: rgba(255,255,255,.07); color: rgba(255,255,255,.55); display: none; }
+.ar-seat.in { border-style: solid; border-color: var(--pc); background: rgba(255,255,255,.04); box-shadow: 0 0 60px -10px var(--pc) inset; }
+.ar-seat.in .ar-join { display: none; }
+.ar-seat.in .ar-av, .ar-seat.in .ar-pn, .ar-seat.in .ar-ps, .ar-seat.in .ar-ctl, .ar-seat.in .ar-rd { display: block; }
+.ar-seat.ready .ar-rd { background: var(--pc); color: #050608; }
+.ar-seat.ready { -webkit-transform: translateY(-10px); transform: translateY(-10px); }
+.ar-count { position: absolute; left: 0; right: 0; top: 860px; text-align: center; font-size: 30px; color: rgba(255,255,255,.75); }
+.ar-count b { font: 700 46px 'Bricolage Grotesque', sans-serif; color: #fff; padding: 0 10px; }
+
+/* option rows (Tidewar setup, players screen) */
+.ar-opts { position: absolute; left: 560px; width: 800px; top: 300px; }
+.ar-opt { height: 96px; border-radius: 24px; padding: 0 40px; margin-bottom: 16px; display: -webkit-box; display: -webkit-flex; display: flex; -webkit-box-align: center; -webkit-align-items: center; align-items: center;
+  background: rgba(255,255,255,.035); border: 1px solid rgba(255,255,255,.07); font-size: 30px; -webkit-transition: all .25s; transition: all .25s; }
+.ar-opt .ar-ol { -webkit-box-flex: 1; -webkit-flex: 1; flex: 1; color: rgba(255,255,255,.7); }
+.ar-opt .ar-ov { font-weight: 700; font-family: 'Bricolage Grotesque', sans-serif; font-size: 34px; }
+.ar-opt .ar-ov em { font-style: normal; color: rgba(255,255,255,.3); font-weight: 300; padding: 0 12px; }
+.ar-opt.sel { background: rgba(255,255,255,.1); border-color: rgba(255,255,255,.45); -webkit-transform: scale(1.03); transform: scale(1.03); }
+.ar-opt.sel .ar-ol { color: #fff; }
+.ar-opt.go { -webkit-box-pack: center; -webkit-justify-content: center; justify-content: center; font-weight: 700; letter-spacing: .3em; font-size: 26px; background: rgba(90,220,255,.12); }
+.ar-opt.go.sel { background: #7af7ff; color: #041016; }
+
+/* ---------- players & scores ---------- */
+#ar-players .ar-plist { position: absolute; left: 160px; right: 160px; top: 270px; }
+.ar-prow { height: 92px; border-radius: 22px; margin-bottom: 12px; padding: 0 34px; display: -webkit-box; display: -webkit-flex; display: flex; -webkit-box-align: center; -webkit-align-items: center; align-items: center;
+  background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.06); font-size: 26px; -webkit-transition: all .2s; transition: all .2s; }
+.ar-prow.sel { background: rgba(255,255,255,.1); border-color: rgba(255,255,255,.4); }
+.ar-prow .ar-dot { width: 34px; height: 34px; border-radius: 10px; -webkit-transform: rotate(45deg); transform: rotate(45deg); margin-right: 30px; }
+.ar-prow .ar-pnm { width: 380px; font: 700 34px 'Bricolage Grotesque', sans-serif; }
+.ar-prow .ar-st { width: 250px; color: rgba(255,255,255,.55); font-size: 20px; letter-spacing: .06em; }
+.ar-prow .ar-st b { display: block; color: #fff; font: 700 30px 'Bricolage Grotesque', sans-serif; letter-spacing: 0; }
+.ar-prow.add { -webkit-box-pack: center; -webkit-justify-content: center; justify-content: center; color: rgba(255,255,255,.6); letter-spacing: .2em; font-size: 22px; font-weight: 700; }
+.ar-prow.head { background: none; border: none; height: 40px; font-size: 17px; letter-spacing: .25em; color: rgba(255,255,255,.38); text-transform: uppercase; }
+.ar-prow.head .ar-st { color: rgba(255,255,255,.38); font-size: 17px; }
+
+/* ---------- modal (pause, results, rename, handover) ---------- */
+#ar-modal { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; background: rgba(3,4,8,.72); display: none; }
+#ar-modal.on { display: block; }
+.ar-box { position: absolute; left: 50%; top: 50%; width: 900px; margin-left: -450px; -webkit-transform: translateY(-50%); transform: translateY(-50%);
+  padding: 60px 70px; border-radius: 40px; background: rgba(14,16,26,.9); border: 1px solid rgba(255,255,255,.12); text-align: center; box-shadow: 0 40px 140px rgba(0,0,0,.7); }
+.ar-box .ar-title { font: 700 70px/1 'Bricolage Grotesque', sans-serif; margin: 14px 0 28px; }
+.ar-box .ar-sub { font-size: 26px; color: rgba(255,255,255,.62); line-height: 1.5; margin-bottom: 30px; }
+.ar-box .ar-opt { margin-left: 60px; margin-right: 60px; }
+.ar-res { text-align: left; margin: 0 0 34px; }
+.ar-res .ar-rr { display: -webkit-box; display: -webkit-flex; display: flex; -webkit-box-align: center; -webkit-align-items: center; align-items: center; height: 84px; border-bottom: 1px solid rgba(255,255,255,.07); font-size: 28px; }
+.ar-res .ar-rk { width: 70px; font: 700 34px 'Bricolage Grotesque', sans-serif; color: rgba(255,255,255,.4); }
+.ar-res .ar-rn { -webkit-box-flex: 1; -webkit-flex: 1; flex: 1; font: 700 36px 'Bricolage Grotesque', sans-serif; }
+.ar-res .ar-rs { font: 700 38px 'Bricolage Grotesque', sans-serif; }
+.ar-res .ar-nb { font-size: 16px; letter-spacing: .2em; font-weight: 800; color: #050608; background: #ffd66e; border-radius: 8px; padding: 4px 10px; margin-left: 16px; vertical-align: middle; }
+.ar-res .ar-rx { font-size: 19px; color: rgba(255,255,255,.45); width: 260px; text-align: right; }
+.ar-wide { width: 1180px !important; margin-left: -590px !important; }
+
+/* on-screen keyboard */
+.ar-kb-name { font: 700 64px/90px 'Bricolage Grotesque', sans-serif; height: 96px; border-bottom: 2px solid rgba(255,255,255,.3); margin: 0 80px 34px; }
+.ar-kb-name i { display: inline-block; width: 4px; height: 60px; background: #7af7ff; vertical-align: -8px; margin-left: 4px; -webkit-animation: arblink 1s steps(2) infinite; animation: arblink 1s steps(2) infinite; }
+@-webkit-keyframes arblink { 50% { opacity: 0; } } @keyframes arblink { 50% { opacity: 0; } }
+.ar-kb-row { white-space: nowrap; }
+.ar-kb-k { display: inline-block; width: 76px; height: 76px; line-height: 76px; margin: 5px; border-radius: 18px; background: rgba(255,255,255,.06); font: 700 30px 'Bricolage Grotesque', sans-serif; }
+.ar-kb-k.w { width: 250px; font-size: 22px; letter-spacing: .15em; }
+.ar-kb-k.sel { background: #fff; color: #050608; -webkit-transform: scale(1.1); transform: scale(1.1); }
+.ar-sw { display: inline-block; width: 54px; height: 54px; border-radius: 16px; margin: 0 8px; -webkit-transform: rotate(45deg); transform: rotate(45deg); border: 3px solid transparent; }
+.ar-sw.sel { border-color: #fff; -webkit-transform: rotate(45deg) scale(1.25); transform: rotate(45deg) scale(1.25); }
+
+/* toast inside the arcade */
+#ar-toast { position: absolute; left: 50%; top: 40px; width: 900px; margin-left: -450px; text-align: center; font-size: 24px; color: #fff; opacity: 0;
+  -webkit-transition: opacity .3s; transition: opacity .3s; }
+#ar-toast span { background: rgba(20,24,36,.92); border: 1px solid rgba(255,255,255,.15); padding: 14px 28px; border-radius: 999px; }
+#ar-toast.on { opacity: 1; }
+
+/* photo avatars */
+.ar-seat .ar-av.ph { -webkit-transform: none; transform: none; border-radius: 50%; background-size: cover; background-position: center; border: 5px solid #fff; }
+.ar-prow .ar-dot.ph { width: 60px; height: 60px; border-radius: 50%; -webkit-transform: none; transform: none; background-size: cover; background-position: center; border: 3px solid #fff; margin-right: 22px; margin-left: -12px; }
+#ar-track { position: absolute; right: 50px; top: 40px; font-size: 20px; color: rgba(255,255,255,.75); opacity: 0; transition: opacity .4s; }
+#ar-track.on { opacity: 1; } #ar-track span { color: rgba(255,255,255,.45); } #ar-track i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #1ed760; margin-right: 10px; }
+
+/* phones panel on the arcade home */
+#ar-phone { position: absolute; left: 60px; bottom: 30px; display: -webkit-box; display: -webkit-flex; display: flex; -webkit-box-align: center; -webkit-align-items: center; align-items: center; }
+#ar-phone canvas { width: 120px; height: 120px; border-radius: 14px; margin-right: 20px; }
+#ar-phone b { display: block; font-size: 20px; color: #fff; }
+#ar-phone span { display: block; font-size: 17px; color: rgba(255,255,255,.55); margin-top: 4px; }
+#ar-phone em { display: block; font-style: normal; font-size: 15px; letter-spacing: .18em; color: rgba(255,255,255,.4); margin-top: 6px; }
+
+/* Spotify DJ now-playing pill over the games */
+#ar-np { position: absolute; left: 40px; bottom: 26px; z-index: 6; display: none; align-items: center; gap: 12px; max-width: 640px; padding: 10px 20px 10px 14px; border-radius: 999px; background: rgba(8,8,20,.72); border: 1px solid rgba(30,215,96,.35); font: 600 20px/1.2 Manrope, sans-serif; color: #fff; white-space: nowrap; overflow: hidden; }
+#ar-np.on { display: -webkit-flex; display: flex; }
+#ar-np i { width: 14px; height: 14px; border-radius: 50%; background: #1ed760; box-shadow: 0 0 12px #1ed760; -webkit-flex-shrink: 0; flex-shrink: 0; }
+#ar-np.paused i { background: #777; box-shadow: none; }
+#ar-np b { overflow: hidden; text-overflow: ellipsis; }
+#ar-np span { color: rgba(255,255,255,.55); font-weight: 500; overflow: hidden; text-overflow: ellipsis; }
+
+/* High effects: soft bloom over the games (games/arcade.js drawBloom) */
+#ar-bloom { position: absolute; left: 0; top: 0; width: 480px; height: 270px; -webkit-transform-origin: 0 0; transform-origin: 0 0; -webkit-transform: scale(4); transform: scale(4); -webkit-filter: blur(3px); filter: blur(3px); mix-blend-mode: screen; opacity: .75; pointer-events: none; display: none; }
+
+/* Shardfall stage skies on Light effects: a still picture behind the game canvas */
+#ar-sky { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; background-size: 1920px 1080px; opacity: 0; -webkit-transition: opacity 1.2s; transition: opacity 1.2s; pointer-events: none; }
