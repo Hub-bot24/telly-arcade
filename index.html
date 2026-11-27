@@ -76,6 +76,12 @@ body { background: radial-gradient(120% 80% at 50% 0%, #1b1440 0%, #07070f 60%);
   function put(k, v) { try { localStorage.setItem(k, v); } catch (e) { } }
   var id = get('tc.id') || ('p' + Math.random().toString(36).slice(2, 10)); put('tc.id', id);
   var q = /[?&]r=([A-Za-z0-9]{4})/.exec(location.search), room = (q ? q[1] : get('tc.room')).toUpperCase(), name = get('tc.name');
+  // The TV's secret key comes in the QR link after the # (browsers never send that part anywhere). Every press is
+  // signed with it, so nobody else on the public broker can pretend to be this phone. Typed a code instead? It still
+  // works, the TV just asks each time.
+  var kq = /[#&]k=([A-Za-z0-9]{12,40})/.exec(location.hash || '');
+  if (kq && room) { put('tc.k.' + room, kq[1]); try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { } }
+  var lastQ = 0;
   $('room').value = room; $('name').value = name;
   var ws = null, live = false, heard = 0, retry = 0;
   // tiny MQTT 3.1.1 client, QoS 0
@@ -84,12 +90,46 @@ body { background: radial-gradient(120% 80% at 50% 0%, #1b1440 0%, #07070f 60%);
   function len(n) { var o = []; do { var d = n % 128; n = Math.floor(n / 128); if (n > 0) d |= 128; o.push(d); } while (n > 0); return o; }
   function pkt(t, body) { return new Uint8Array([t].concat(len(body.length)).concat(body)); }
   function send(u) { if (ws && ws.readyState === 1) ws.send(u); }
-  function pub(obj) { obj.id = id; obj.n = name; send(pkt(0x30, str('tellyarc/' + room + '/c').concat(utf8(JSON.stringify(obj))))); }
+  function pub(obj) {
+    obj.id = id; if (obj.a === 'HI') obj.n = name;   // the name only goes with the hello, not with every press
+    var key = get('tc.k.' + room);
+    if (key) { obj.q = lastQ = Math.max(lastQ + 1, Date.now()); obj.h = hmacHex(key, [obj.id, obj.q, obj.a, obj.d ? 1 : 0, obj.n || ''].join('|')); }
+    send(pkt(0x30, str('tellyarc/' + room + '/c').concat(utf8(JSON.stringify(obj)))));
+  }
+  // SHA-256 / HMAC, the same few lines the TV uses to check
+  var SHK = [], SHH = [];
+  (function () { var n = 2, c = 0; while (c < 64) { var pr = true; for (var d = 2; d * d <= n; d++) if (n % d === 0) { pr = false; break; } if (pr) { if (c < 8) SHH.push((Math.pow(n, 1 / 2) % 1) * 4294967296 | 0); SHK.push((Math.pow(n, 1 / 3) % 1) * 4294967296 | 0); c++; } n++; } })();
+  function sha256(m) {
+    var H = SHH.slice(), l = m.length * 8, w = [], i, o;
+    m = m.slice(); m.push(0x80); while (m.length % 64 !== 56) m.push(0);
+    m.push(0, 0, 0, 0, (l >>> 24) & 255, (l >>> 16) & 255, (l >>> 8) & 255, l & 255);
+    for (o = 0; o < m.length; o += 64) {
+      for (i = 0; i < 16; i++) w[i] = (m[o + 4 * i] << 24) | (m[o + 4 * i + 1] << 16) | (m[o + 4 * i + 2] << 8) | m[o + 4 * i + 3];
+      for (i = 16; i < 64; i++) { var x = w[i - 15], y = w[i - 2]; w[i] = (w[i - 16] + (((x >>> 7) | (x << 25)) ^ ((x >>> 18) | (x << 14)) ^ (x >>> 3)) + w[i - 7] + (((y >>> 17) | (y << 15)) ^ ((y >>> 19) | (y << 13)) ^ (y >>> 10))) | 0; }
+      var a = H[0], b = H[1], c = H[2], d = H[3], e = H[4], f = H[5], g = H[6], h = H[7];
+      for (i = 0; i < 64; i++) {
+        var t1 = (h + (((e >>> 6) | (e << 26)) ^ ((e >>> 11) | (e << 21)) ^ ((e >>> 25) | (e << 7))) + ((e & f) ^ (~e & g)) + SHK[i] + w[i]) | 0;
+        var t2 = ((((a >>> 2) | (a << 30)) ^ ((a >>> 13) | (a << 19)) ^ ((a >>> 22) | (a << 10))) + ((a & b) ^ (a & c) ^ (b & c))) | 0;
+        h = g; g = f; f = e; e = (d + t1) | 0; d = c; c = b; b = a; a = (t1 + t2) | 0;
+      }
+      H[0] = (H[0] + a) | 0; H[1] = (H[1] + b) | 0; H[2] = (H[2] + c) | 0; H[3] = (H[3] + d) | 0; H[4] = (H[4] + e) | 0; H[5] = (H[5] + f) | 0; H[6] = (H[6] + g) | 0; H[7] = (H[7] + h) | 0;
+    }
+    var out = []; for (i = 0; i < 8; i++) out.push((H[i] >>> 24) & 255, (H[i] >>> 16) & 255, (H[i] >>> 8) & 255, H[i] & 255);
+    return out;
+  }
+  function hmacHex(k, msg) {
+    var kb = utf8(k), ip = [], op = [], i; if (kb.length > 64) kb = sha256(kb);
+    for (i = 0; i < 64; i++) { ip.push((kb[i] || 0) ^ 0x36); op.push((kb[i] || 0) ^ 0x5c); }
+    var r = sha256(op.concat(sha256(ip.concat(utf8(msg))))), hx = '';
+    for (i = 0; i < 8; i++) hx += (r[i] < 16 ? '0' : '') + r[i].toString(16);
+    return hx;
+  }
   var buf = [];
   function onData(ab) {
     var b = new Uint8Array(ab); for (var i = 0; i < b.length; i++) buf.push(b[i]);
     while (buf.length >= 2) {
       var mul = 1, n = 0, k = 1, by; do { if (k >= buf.length) return; by = buf[k++]; n += (by & 127) * mul; mul *= 128; } while (by & 128);
+      if (n > 4096) { buf = []; return; }   // nothing the TV sends is this big
       if (buf.length < k + n) return;
       var first = buf[0], body = buf.slice(k, k + n); buf = buf.slice(k + n);
       if ((first & 0xF0) === 0x20) { live = true; retry = 0; send(pkt(0x82, [0, 1].concat(str('tellyarc/' + room + '/t')).concat([0]))); pub({ a: 'HI' }); status(); }
@@ -115,15 +155,16 @@ body { background: radial-gradient(120% 80% at 50% 0%, #1b1440 0%, #07070f 60%);
     $('pad').classList.toggle('quiz', l.mode === 'quiz');
     ['A', 'B', 'X', 'Y'].forEach(function (k) {
       var el = $('b' + k), t = l[k]; if (!el) return;
-      el.innerHTML = t ? (t === 'DROP' ? 'DROP' : k + '<small>' + t.replace(/</g, '') + '</small>') : BASE[k];
+      t = typeof t === 'string' ? t.replace(/[<>&"]/g, '').slice(0, 10) : '';
+      el.innerHTML = t ? (t === 'DROP' ? 'DROP' : k + '<small>' + t + '</small>') : BASE[k];
       el.classList.toggle('big', t === 'DROP');
     });
-    var h = document.querySelector('.sm[data-a="LB"]'); if (h) h.textContent = l.LB || 'HOLD';
+    var h = document.querySelector('.sm[data-a="LB"]'); if (h) h.textContent = typeof l.LB === 'string' ? l.LB.slice(0, 10) : 'HOLD';
   }
   function status() {
     var tv = live && Date.now() - heard < 12000, wt = live && !tv && Date.now() - waitTV < 12000, el = $('st');
     el.className = 'st' + (tv ? ' ok' : ''); el.innerHTML = '<i></i>' + (tv ? 'Connected to the TV · room ' + room : wt ? 'Ask someone at the TV to press OK to let you in' : live ? 'Waiting for the TV (open the arcade) · ' + room : 'Connecting…');
-    $('me').innerHTML = '<b>' + (name || 'Player').replace(/</g, '') + '</b>Press A to join a game';
+    $('me').innerHTML = '<b>' + (name || 'Player').replace(/[<>&"]/g, '') + '</b>Press A to join a game';
   }
   // buttons: multi-touch, each finger tracked separately
   var held = {}, owner = {};
